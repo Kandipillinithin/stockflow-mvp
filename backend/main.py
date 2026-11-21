@@ -50,7 +50,8 @@ class SettingsUpdate(BaseModel):
 
 @app.post("/api/auth/signup")
 def signup(req: SignupRequest, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == req.email).first():
+    email = req.email.strip().lower()
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     if len(req.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
@@ -59,7 +60,7 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
     db.add(org)
     db.flush()
 
-    user = User(email=req.email, password_hash=hash_password(req.password), organization_id=org.id)
+    user = User(email=email, password_hash=hash_password(req.password), organization_id=org.id)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -69,7 +70,8 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == req.email).first()
+    email = req.email.strip().lower()
+    user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
